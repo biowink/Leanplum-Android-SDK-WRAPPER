@@ -1,0 +1,23 @@
+/** wrap original project with injected custom logic */
+
+buildscript {
+    // path of original sdk
+    ext.sdkPath = "$settingsDir/Leanplum-Android-SDK"
+    // path of injected build file (relative to 'settingsDir')
+    ext.buildFileRelativePath = 'build/generated/build-injected.gradle'
+}
+
+// make sure the submodule is initialised
+'git submodule update --init --recursive'.execute().waitFor()
+
+// merge original root 'build.gradle' with custom logic
+apply from: "$settingsDir/util/merge-build-file.gradle"
+
+// apply original 'settings.gradle'
+apply from: "$sdkPath/settings.gradle"
+
+// delegate 'rootProject' to original in 'sdkPath'
+rootProject.name = sdkPath
+rootProject.projectDir = file(sdkPath)
+rootProject.buildFileName = "../$buildFileRelativePath" // relative to 'projectDir'
+rootProject.children.each { it -> it.projectDir = file("$sdkPath/${it.name}") }

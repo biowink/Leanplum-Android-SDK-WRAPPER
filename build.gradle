@@ -1,0 +1,68 @@
+// specify default tasks run when gradle is invoked without parameters
+defaultTasks('clean', 'assembleRelease', 'publishAarPublicationToMavenLocal')
+
+// inject custom logic in each subproject (after evaluation)
+project.afterEvaluate { projectEvaluated ->
+    projectEvaluated.subprojects { subproject ->
+        subproject.afterEvaluate { subprojectEvaluated ->
+            injectCustomLogic(subprojectEvaluated)
+        }
+    }
+}
+
+/**
+ * <ol>
+ * <li>fix tasks dependencies so clean/assemble/publish doesn't fail
+ * <li>add sources jar to aar publication
+ * </ol>
+ */
+private static injectCustomLogic(Project project) {
+    // since the original build adds some tasks after evaluation,
+    // the only way to get them is to listen when they are added
+
+    boolean done = false
+    Task assembleTask = null
+    Task publishTask = null
+
+    final Closure<Task> processTask = { task ->
+        if (done) return
+
+        switch (task.name) {
+            default: return
+
+            case 'assembleRelease':
+                assembleTask = task
+                break
+
+            case 'publishAarPublicationToMavenLocal':
+                publishTask = task
+                break
+        }
+
+        if (assembleTask == null || publishTask == null) return
+        done = true
+
+        // add dependency so publishing happens after assembling
+        publishTask.dependsOn(assembleTask)
+
+        // add task to generate sources jar
+        final Jar sourcesJarTask = project.task([type: Jar], 'sourcesJar') {
+            from project.android.sourceSets.main.java.srcDirs
+            classifier 'sources'
+        }
+
+        // add sources jar to publication
+        project.extensions
+                .getByType(PublishingExtension)
+                .publications
+                .withType(MavenPublication)
+                .getByName('aar')
+                .artifact(sourcesJarTask)
+    }
+
+    // process existing tasks
+    project.tasks.forEach(processTask)
+
+    // process new tasks as they are added
+    project.tasks.whenTaskAdded(processTask)
+}

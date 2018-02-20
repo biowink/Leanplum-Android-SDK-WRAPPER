@@ -1,0 +1,11 @@
+# custom build options for JitPack
+
+before_install:
+   # set the artifact version to the value of 'git describe'
+   - export ANDROID_VERSION_STRING=$GIT_DESCRIBE
+   # print the value in the logs
+   - echo "ANDROID_VERSION_STRING='$ANDROID_VERSION_STRING'"
+
+install:
+   # execute default tasks (clean, assemble, publish aar)
+   - ./gradlew

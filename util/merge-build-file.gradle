@@ -1,0 +1,25 @@
+/** create build file with injected custom logic */
+
+// original build file
+final buildFileOriginal = file("$sdkPath/build.gradle")
+// custom logic
+final buildFileAddition = file("$settingsDir/build.gradle")
+// final build file
+final buildFileMerged = file("$settingsDir/$buildFileRelativePath")
+
+final appendToMergedBuildFile = buildFileMerged.&append // method reference
+
+// prepare empty 'buildFileMerged' file
+if (buildFileMerged.exists()) buildFileMerged.delete()
+buildFileMerged.parentFile.mkdirs()
+buildFileMerged.createNewFile()
+
+// add custom logic to build file
+appendToMergedBuildFile("/** CUSTOM LOGIC **/\n\n")
+buildFileAddition.withReader(appendToMergedBuildFile)
+
+appendToMergedBuildFile("\n\n")
+
+// add original logic to build file
+appendToMergedBuildFile("/** ORIGINAL LOGIC **/\n\n")
+buildFileOriginal.withReader(appendToMergedBuildFile)

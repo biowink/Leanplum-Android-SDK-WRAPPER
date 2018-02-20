@@ -1,0 +1,3 @@
+[submodule "Leanplum-Android-SDK"]
+	path = Leanplum-Android-SDK
+	url = https://github.com/biowink/Leanplum-Android-SDK
